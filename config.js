@@ -1,0 +1,3 @@
+var cadeiaConexao = "";
+
+export { cadeiaConexao };
