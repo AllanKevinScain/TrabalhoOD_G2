@@ -6,7 +6,6 @@ import { sleep, xml2json, criarJSON, uploadJSON, uploadXML, base642json } from '
 import axios from 'axios';
 import fs from 'fs';
 
-let semaforo = 0;
 console.log("Iniciando upload assíncrono dos arquivos xml!");
 
 async function main() {
