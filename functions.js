@@ -8,6 +8,7 @@ import { info } from "console";
 
 function criarJSON(nome, data) {
   fs.writeFileSync(path.resolve(PASTA_JSON, nome), data);
+  return { caminho: path.resolve(PASTA_JSON, nome), filename: nome };
 }
 
 function xml2json(data) {
@@ -22,66 +23,43 @@ async function uploadXML() {
   let arrayArquivos = fs.readdirSync(PASTA_XML);
   let blobServiceClient = storageBlob.BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
   let containerClient = blobServiceClient.getContainerClient("contoso-xml");
-  arrayArquivos.forEach(async filename => {
+  for (const filename of arrayArquivos) {
     let caminho = path.resolve(PASTA_XML, filename);
     let infoFile = fs.statSync(caminho);
-
     let blobClient = containerClient.getBlockBlobClient(filename);
     let bufferSize = (1 * 1024 * 1024) / 2;
     let file = fs.createReadStream(caminho);
 
     try {
-      console.log("Enviando arquivo" + filename);
-      await blobClient.uploadStream(file, bufferSize, 5, {
+      blobClient.uploadStream(file, bufferSize, 5, {
         onProgress: (ev) => {
-          let progress = ev.loadedBytes / infoFile.size;
-          console.log(Math.round(progress*100) + "% conluido");
+          console.log("Progresso do upload do arquivo", filename, " ", Math.round((ev.loadedBytes / infoFile.size)*100), "%");
         }
       })
     } catch (e) {
       console.log(e);
     }
-    // blobClient.uploadData(file, {
-    //   onProgress: (ev) => {
-    //     console.log(ev);
-    //   }
-    // })
-
-
-  })
-
-
+  }
 }
 
-async function uploadJSON() {
+async function uploadJSON(stream, filename) {
 
-  let arrayArquivos = fs.readdirSync(PASTA_JSON);
   let blobServiceClient = storageBlob.BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
   let containerClient = blobServiceClient.getContainerClient("contoso-json");
-  arrayArquivos.forEach(async filename => {
-    let caminho = path.resolve(PASTA_JSON, filename);
-    let infoFile = fs.statSync(caminho);
 
-    let blobClient = containerClient.getBlockBlobClient(filename);
-    let bufferSize = (1 * 1024 * 1024) / 2;
-    let file = fs.createReadStream(caminho);
+  let blobClient = containerClient.getBlockBlobClient(filename);
+  let bufferSize = (1 * 1024 * 1024) / 2;
 
-    try {
-      console.log("Enviando arquivo " + filename);
-      await blobClient.uploadStream(file, bufferSize, 5, {
-        onProgress: (ev) => {
-          let progress = ev.loadedBytes / infoFile.size;
-          console.log(Math.round(progress*100) + " conluido",);
-        }
-      })
-      fs.unlinkSync(caminho);
-    } catch (e) {
-      console.log(e);
-    }
-   
-  });
+  try {
+    await blobClient.uploadStream(stream, bufferSize, 5, {
+      onProgress: (ev) => {
+      }
+    })
+  } catch (e) {
+    console.log(e);
+  }
 
-}
+};
 
 function sleep(ms) {
   return new Promise((resolve) => {
